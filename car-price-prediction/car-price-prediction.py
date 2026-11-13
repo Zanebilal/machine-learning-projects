@@ -86,4 +86,35 @@ del df_train['msrp']
 del df_valid['msrp']
 del df_test['msrp']
 
-print(df_train.head(10))
+## implementing the linear regression function to predict the price of the car
+
+X = [
+    [148, 24, 1385],
+    [132, 25, 2031],
+    [453, 11, 86],
+    [158, 24, 185],
+    [172, 25, 201],
+    [413, 11, 86],
+    [38,  54, 185],
+    [142, 25, 431],
+    [453, 31, 86],
+]
+
+X = np.array(X)
+
+y = [100, 200, 150, 250, 100, 200, 150, 250, 120]
+
+
+## calculating the wights w of the features 
+def train_linear_regression(X,y)
+
+    ones = np.ones(X.shape[0])
+    X = np.column_stack([ones, X])
+
+    ## calculating the wights using the gram matrix with the formula : w = (XᵀX)⁻¹Xᵀy
+    XtX = X.T.dot(X)
+    XtX_inverse = np.linalg.inv(XtX)
+
+    w_full = XtX_inverse.dot(X.T).dot(y)
+
+    return w_full[0], w_full[1:]

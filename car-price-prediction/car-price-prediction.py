@@ -20,7 +20,7 @@ strings = list(df.dtypes[df.dtypes == 'str'].index)
 for col in strings:
     df[col] = df[col].str.lower().str.replace(' ', '_')
 
-## printing each column and its firs 10 unique values
+# ## printing each column and its firs 10 unique values
 for col in df.columns :
     print()
     print(col)
@@ -37,8 +37,8 @@ sns.histplot(price_logs, bins=50)
 ## getting the total number of null values 
 print(df.isnull().sum())
 
-## displaying the graph 
-plt.show()
+# ## displaying the graph 
+# plt.show()
 
 ## preparing the validation framework 
 
@@ -106,7 +106,7 @@ y = [100, 200, 150, 250, 100, 200, 150, 250, 120]
 
 
 ## calculating the wights w of the features 
-def train_linear_regression(X,y)
+def train_linear_regression(X,y):
 
     ones = np.ones(X.shape[0])
     X = np.column_stack([ones, X])
@@ -118,3 +118,25 @@ def train_linear_regression(X,y)
     w_full = XtX_inverse.dot(X.T).dot(y)
 
     return w_full[0], w_full[1:]
+
+
+
+## getting the int columns and there values  to get the base wight
+base = ['engine_hp', 'engine_cylinders', 'highway_mpg',
+        'city_mpg', 'popularity']
+
+X_train = df_train[base].values
+
+## filling the missing values with zeros
+X_train = df_train[base].fillna(0).values
+
+## calculating the base wight based on the int features 
+w0 , w = train_linear_regression(X_train, y_train)
+
+## predicting the values of the target (the price)
+y_predicted = w0 + X_train.dot(w)
+
+sns.histplot(y_predicted, color='red', alpha=0.5, bins=50)
+sns.histplot(y_train, color='blue', alpha=0.5, bins=50)
+
+plt.show()

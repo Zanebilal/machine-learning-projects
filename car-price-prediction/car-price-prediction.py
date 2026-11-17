@@ -133,7 +133,15 @@ base = ['engine_hp', 'engine_cylinders', 'highway_mpg',
 
 ##  implementing the function that prepares the data
 def prepare_X(df):
-    df_num = df[base]
+
+    ## copying dataframe to a new one to modify it
+    df = df.copy()
+
+    ## adding new feature (age of the car) 
+    df['age'] = 2017 - df.year
+    features = base + ['age']
+
+    df_num = df[features]
     df_num = df_num.fillna(0)
     X = df_num.values
     return X
@@ -157,3 +165,8 @@ def rmse(y, y_pred):
     return np.sqrt(mse)
 
 print(rmse(y_valid, y_predicted))
+
+sns.histplot(y_predicted, label='prediction', color='red', alpha=0.5, bins=50)
+sns.histplot(y_valid, label='target', color='blue',  alpha=0.5, bins=50)
+plt.legend()
+plt.show()

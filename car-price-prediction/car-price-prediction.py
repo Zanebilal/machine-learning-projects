@@ -125,21 +125,30 @@ def train_linear_regression(X,y):
 base = ['engine_hp', 'engine_cylinders', 'highway_mpg',
         'city_mpg', 'popularity']
 
-X_train = df_train[base].values
 
-## filling the missing values with zeros
-X_train = df_train[base].fillna(0).values
-
-## calculating the base wight based on the int features 
-w0 , w = train_linear_regression(X_train, y_train)
-
-## predicting the values of the target (the price)
-y_predicted = w0 + X_train.dot(w)
-
-sns.histplot(y_predicted, color='red', alpha=0.5, bins=50)
-sns.histplot(y_train, color='blue', alpha=0.5, bins=50)
+# sns.histplot(y_predicted, color='red', alpha=0.5, bins=50)
+# sns.histplot(y_train, color='blue', alpha=0.5, bins=50)
 
 # plt.show()
+
+##  implementing the function that prepares the data
+def prepare_X(df):
+    df_num = df[base]
+    df_num = df_num.fillna(0)
+    X = df_num.values
+    return X
+
+## preparing the training data
+X_train = prepare_X(df_train)
+
+## getting the weights of the training data
+w0, w = train_linear_regression (X_train , y_train)
+
+## preparing the validation data
+X_valid = prepare_X(df_valid)
+
+y_predicted = w0 + X_valid.dot(w)
+
 
 ## implementing the RMSE function 
 def rmse(y, y_pred):
@@ -147,4 +156,4 @@ def rmse(y, y_pred):
     mse = se.mean()
     return np.sqrt(mse)
 
-print(rmse(y_train, y_predicted))
+print(rmse(y_valid, y_predicted))

@@ -137,13 +137,37 @@ def prepare_X(df):
     ## copying dataframe to a new one to modify it
     df = df.copy()
 
+    features = base.copy()
     ## adding new feature (age of the car) 
     df['age'] = 2017 - df.year
-    features = base + ['age']
+    features.append('age')
+
+    ## adding categorical features
+    for v in [2,3,4]:
+        df['num_doors_%s' % v] = (df.number_of_doors == v ).astype('int')
+        features.append('num_doors_%s' % v)
+
+
+    categorical_variables = [
+    'make', 'engine_fuel_type', 'transmission_type', 'driven_wheels',
+    'market_category', 'vehicle_size', 'vehicle_style'
+    ]
+
+    categories = {}
+
+    for c in categorical_variables:
+        categories[c] = list(df_train[c].value_counts().head().index)
+
+    for c, values in categories.items():
+        for v in values:
+            df['%s_%s' % (c, v)] = (df[c] == v).astype('int')
+            features.append('%s_%s' % (c, v))
+
 
     df_num = df[features]
     df_num = df_num.fillna(0)
     X = df_num.values
+
     return X
 
 ## preparing the training data
@@ -164,9 +188,10 @@ def rmse(y, y_pred):
     mse = se.mean()
     return np.sqrt(mse)
 
-print(rmse(y_valid, y_predicted))
 
-sns.histplot(y_predicted, label='prediction', color='red', alpha=0.5, bins=50)
-sns.histplot(y_valid, label='target', color='blue',  alpha=0.5, bins=50)
-plt.legend()
-plt.show()
+print(rmse(y_valid,y_predicted))
+
+# sns.histplot(y_predicted, label='prediction', color='red', alpha=0.5, bins=50)
+# sns.histplot(y_valid, label='target', color='blue',  alpha=0.5, bins=50)
+# plt.legend()
+# plt.show()

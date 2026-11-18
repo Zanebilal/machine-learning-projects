@@ -208,13 +208,15 @@ y_full_train = np.concatenate([y_train, y_valid])
 ## training the model 
 w0 , w = train_linear_regression_reg(X_full_train, y_full_train, r = 0.001)
 
-# training the model on the test data   
-X_test = prepare_X(df_test)
-y_pred = w0 + X_test.dot(w)
-score = rmse(y_test, y_pred)
-print(score)
+# predicting the price of a car from the test dataset
+car = df_test.iloc[20].to_dict()
 
-# sns.histplot(y_predicted, label='prediction', color='red', alpha=0.5, bins=50)
-# sns.histplot(y_valid, label='target', color='blue',  alpha=0.5, bins=50)
-# plt.legend()
-# plt.show()
+## creating df fo the car
+df_small = pd.DataFrame([car])
+X_small = prepare_X(df_small)
+
+## applying the model to the new car
+y_pred = w0 + X_small.dot(w)
+y_pred = y_pred[0]
+print(f"the predicted price of the car is : " , np.expm1(y_pred))
+print(f"the real price of the car is : ", np.expm1(y_test[20]))

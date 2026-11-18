@@ -106,13 +106,17 @@ y = [100, 200, 150, 250, 100, 200, 150, 250, 120]
 
 
 ## calculating the wights w of the features 
-def train_linear_regression(X,y):
+def train_linear_regression_reg(X,y, r = 0.001):
 
     ones = np.ones(X.shape[0])
     X = np.column_stack([ones, X])
 
     ## calculating the wights using the gram matrix with the formula : w = (XᵀX)⁻¹Xᵀy
     XtX = X.T.dot(X)
+
+    ## controlling the diagonal of the gram matrix to get less weight values and regularizing the model
+    XtX = XtX + r * np.eye(XtX.shape[0])
+
     XtX_inverse = np.linalg.inv(XtX)
 
     w_full = XtX_inverse.dot(X.T).dot(y)
@@ -174,7 +178,7 @@ def prepare_X(df):
 X_train = prepare_X(df_train)
 
 ## getting the weights of the training data
-w0, w = train_linear_regression (X_train , y_train)
+w0, w = train_linear_regression_reg(X_train , y_train, r = 0.01)
 
 ## preparing the validation data
 X_valid = prepare_X(df_valid)

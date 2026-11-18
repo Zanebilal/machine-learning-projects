@@ -178,7 +178,7 @@ def prepare_X(df):
 X_train = prepare_X(df_train)
 
 ## getting the weights of the training data
-w0, w = train_linear_regression_reg(X_train , y_train, r = 0.01)
+w0, w = train_linear_regression_reg(X_train , y_train, r = 0.001)
 
 ## preparing the validation data
 X_valid = prepare_X(df_valid)
@@ -193,7 +193,22 @@ def rmse(y, y_pred):
     return np.sqrt(mse)
 
 
-print(rmse(y_valid,y_predicted))
+# training the model with the full dataset (training + validation)
+## concatenating the dfs to ow training df 
+df_full_train = pd.concat([df_train, df_valid]) 
+
+## resetting the index 
+df_full_train = df_full_train.reset_index(drop=True)
+
+X_full_train = prepare_X(df_full_train)
+
+## concatenating the target value of the two df
+y_full_train = np.concatenate([y_train, y_valid])
+
+## training the model 
+w0 , w = train_linear_regression_reg(X_full_train, y_full_train, r = 0.001)
+
+
 
 # sns.histplot(y_predicted, label='prediction', color='red', alpha=0.5, bins=50)
 # sns.histplot(y_valid, label='target', color='blue',  alpha=0.5, bins=50)

@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from sklearn.model_selection import train_test_split
+
 
 df = pd.read_csv('Telco-Customer-Churn.csv')
 
@@ -20,4 +22,22 @@ df.totalcharges = df.totalcharges.fillna(0)
 df.churn = (df.churn == 'yes').astype(int)
 
 
-print(df.churn.head())
+# splitting the dataframe
+
+df_full_train , df_test = train_test_split(df, test_size= 0.2 , random_state=1)
+df_train , df_valid = train_test_split(df_full_train , test_size=0.25, random_state=1)
+
+## resetting the indexes of the dataframes
+df_train = df_train.reset_index(drop=True)
+df_valid = df_valid.reset_index(drop=True)
+df_test = df_test.reset_index(drop=True)
+
+## getting the target values 
+y_train = df_train.churn.values
+y_valid = df_valid.churn.values
+y_test = df_test.churn.values
+
+## removing the target values from the dataframes
+del df_train['churn']
+del df_valid['churn']
+del df_test['churn']

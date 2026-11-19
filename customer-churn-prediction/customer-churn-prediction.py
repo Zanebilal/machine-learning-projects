@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
+from IPython.display import display
+
 
 
 df = pd.read_csv('Telco-Customer-Churn.csv')
@@ -41,3 +43,18 @@ y_test = df_test.churn.values
 del df_train['churn']
 del df_valid['churn']
 del df_test['churn']
+
+
+df_full_train = df_full_train.reset_index(drop=True)
+
+## churn analysis using categorical features 
+global_churn = df_full_train.churn.mean() 
+
+for c in categorical_columns:
+    print(c)
+    df_group = df_full_train.groupby(c).churn.agg(['mean', 'count'])
+    df_group['diff'] = df_group['mean'] - global_churn
+    df_group['risk'] = df_group['mean'] / global_churn
+    display(df_group)
+    print()
+    print()

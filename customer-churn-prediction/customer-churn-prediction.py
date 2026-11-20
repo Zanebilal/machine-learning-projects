@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from IPython.display import display
+from sklearn.metrics import mutual_info_score
 
 
 
@@ -47,14 +48,11 @@ del df_test['churn']
 
 df_full_train = df_full_train.reset_index(drop=True)
 
-## churn analysis using categorical features 
-global_churn = df_full_train.churn.mean() 
 
-for c in categorical_columns:
-    print(c)
-    df_group = df_full_train.groupby(c).churn.agg(['mean', 'count'])
-    df_group['diff'] = df_group['mean'] - global_churn
-    df_group['risk'] = df_group['mean'] / global_churn
-    display(df_group)
-    print()
-    print()
+## churn analysis using categorical features 
+# mutual information using sklearn library 
+def mutual_info_churn_score(series):
+    return mutual_info_score(df_full_train.churn, series)
+
+mutual_info = df_full_train[categorical_columns].apply(mutual_info_churn_score) 
+print(mutual_info.sort_values(ascending=False))

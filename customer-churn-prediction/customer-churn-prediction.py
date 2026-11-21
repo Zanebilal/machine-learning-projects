@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from IPython.display import display
 from sklearn.metrics import mutual_info_score
-
+from sklearn.feature_extraction import DictVectorizer
 
 
 df = pd.read_csv('Telco-Customer-Churn.csv')
@@ -13,7 +13,10 @@ df = pd.read_csv('Telco-Customer-Churn.csv')
 ## preparing the data
 df.columns = df.columns.str.lower().str.replace(' ', '_')
 
-categorical_columns = list(df.dtypes[df.dtypes == 'str'].index)
+categorical_columns = list(df.select_dtypes(include=['object', 'string']).columns)
+
+categorical_columns.remove('churn')
+categorical_columns.remove('customerid')
 
 for c in categorical_columns :
     df[c] = df[c].str.lower().str.replace(' ', '_')
@@ -56,21 +59,17 @@ def mutual_info_churn_score(series):
 
 mutual_info = df_full_train[categorical_columns].apply(mutual_info_churn_score) 
 
-# determining the important numerical features with correlation
-
+## getting the numerical columns
 numerical_columns = ['tenure', 'monthlycharges', 'totalcharges']
 
-print(df_full_train[numerical_columns].corrwith(df_full_train.churn).abs())
+## performing Feature Vectorization
+### Initializing DictVectorizer
+dv = DictVectorizer(sparse=False)
 
-# analyzing the churn of numerical columns in categories
-print("the max number of tenure : ", df_full_train.tenure.max())
+### Converting the training DataFrame into a list of dictionaries 
+train_dict = df_train[categorical_columns + numerical_columns].to_dict(orient='records')
+X_train = dv.fit_transform(train_dict)
 
-## splitting the tenure into categories and calculate there churn for each category (less then 2 months, between 2 month and 1 year, more then 1 year)
-print("for less then 2 months of subscription :" , df_full_train[df_full_train.tenure <= 2 ].churn.mean())   ## for less then 2 months of subscription
-print("etween 2 months and one year : " , df_full_train[(df_full_train.tenure > 2) & (df_full_train.tenure <= 12)].churn.mean())     ## between 2 months and one year
-print("more then one year :", df_full_train[df_full_train.tenure <= 2 ].churn.mean()  )    ## more then one year
-
-## splitting the  monthlycharges  into categories and calculate there churn for each category
-print("paying less then 20 dollars : ", df_full_train[df_full_train.monthlycharges <= 20].churn.mean())
-print("paying between 20 and 50 dollars : ", df_full_train[(df_full_train.monthlycharges > 20) & (df_full_train.monthlycharges <= 50)].churn.mean())
-print("paying more then 50 dollars : ", df_full_train[df_full_train.monthlycharges > 50].churn.mean())
+## encoding the validation df 
+valid_dict = df_valid[categorical_columns + numerical_columns].to_dict(orient='records')
+X_valid = dv.transform(valid_dict)

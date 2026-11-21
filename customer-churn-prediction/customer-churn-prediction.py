@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from IPython.display import display
 from sklearn.metrics import mutual_info_score
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.linear_model import LogisticRegression
+
 
 
 df = pd.read_csv('Telco-Customer-Churn.csv')
@@ -25,8 +27,7 @@ for c in categorical_columns :
 df.totalcharges = pd.to_numeric(df.totalcharges, errors='coerce')
 df.totalcharges = df.totalcharges.fillna(0)
 
-df.churn = (df.churn == 'yes').astype(int)
-
+df['churn'] = (df['churn'].str.lower() == 'yes').astype(int)
 
 # splitting the dataframe
 
@@ -73,3 +74,20 @@ X_train = dv.fit_transform(train_dict)
 ## encoding the validation df 
 valid_dict = df_valid[categorical_columns + numerical_columns].to_dict(orient='records')
 X_valid = dv.transform(valid_dict)
+
+
+#  the logistic regression function 
+model = LogisticRegression(solver='lbfgs')
+model.fit(X_train, y_train)
+
+print(" the bias wights is : " , model.intercept_[0])
+print("the other wights are :" , model.coef_[0].round(3))
+
+## making predictions  
+y_pred = model.predict_proba(X_valid)[:, 1]
+
+churn_decision = (y_pred >= 0.5)
+print(churn_decision)
+
+## comparing the prediction with the actual value 
+print((y_valid == churn_decision).mean())    ## we have got 80% guessed right

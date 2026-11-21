@@ -55,4 +55,22 @@ def mutual_info_churn_score(series):
     return mutual_info_score(df_full_train.churn, series)
 
 mutual_info = df_full_train[categorical_columns].apply(mutual_info_churn_score) 
-print(mutual_info.sort_values(ascending=False))
+
+# determining the important numerical features with correlation
+
+numerical_columns = ['tenure', 'monthlycharges', 'totalcharges']
+
+print(df_full_train[numerical_columns].corrwith(df_full_train.churn).abs())
+
+# analyzing the churn of numerical columns in categories
+print("the max number of tenure : ", df_full_train.tenure.max())
+
+## splitting the tenure into categories and calculate there churn for each category (less then 2 months, between 2 month and 1 year, more then 1 year)
+print("for less then 2 months of subscription :" , df_full_train[df_full_train.tenure <= 2 ].churn.mean())   ## for less then 2 months of subscription
+print("etween 2 months and one year : " , df_full_train[(df_full_train.tenure > 2) & (df_full_train.tenure <= 12)].churn.mean())     ## between 2 months and one year
+print("more then one year :", df_full_train[df_full_train.tenure <= 2 ].churn.mean()  )    ## more then one year
+
+## splitting the  monthlycharges  into categories and calculate there churn for each category
+print("paying less then 20 dollars : ", df_full_train[df_full_train.monthlycharges <= 20].churn.mean())
+print("paying between 20 and 50 dollars : ", df_full_train[(df_full_train.monthlycharges > 20) & (df_full_train.monthlycharges <= 50)].churn.mean())
+print("paying more then 50 dollars : ", df_full_train[df_full_train.monthlycharges > 50].churn.mean())

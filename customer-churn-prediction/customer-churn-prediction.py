@@ -80,14 +80,37 @@ X_valid = dv.transform(valid_dict)
 model = LogisticRegression(solver='lbfgs')
 model.fit(X_train, y_train)
 
-print(" the bias wights is : " , model.intercept_[0])
-print("the other wights are :" , model.coef_[0].round(3))
-
 ## making predictions  
 y_pred = model.predict_proba(X_valid)[:, 1]
 
-churn_decision = (y_pred >= 0.5)
-print(churn_decision)
+## assigning each weight with its appropriate feature 
+dict(zip(dv.get_feature_names_out(), model.coef_[0].round(3)))
 
-## comparing the prediction with the actual value 
-print((y_valid == churn_decision).mean())    ## we have got 80% guessed right
+
+## getting the full training data to train the model
+dicts_full_train = df_full_train[categorical_columns + numerical_columns].to_dict(orient='records')
+
+dv = DictVectorizer(sparse=False)
+X_full_train = dv.fit_transform(dicts_full_train)
+
+y_full_train = df_full_train.churn.values
+
+# training the model
+model = LogisticRegression(solver='lbfgs')
+model.fit(X_full_train, y_full_train)
+
+## setting the test data 
+dicts_test = df_test[categorical_columns + numerical_columns].to_dict(orient='records')
+X_test = dv.transform(dicts_test)
+
+## checking the model accuracy on the test data
+y_pred = model.predict_proba(X_test)[:, 1]
+churn_decision = (y_pred >= 0.5)
+print((churn_decision == y_pred).mean())  ## 80% predicted right (same as the validation part)
+
+## checking for a single customer
+customer = dicts_test[-1]
+X_small = dv.transform([customer])
+print("the prediction of this customer to churns is : " , model.predict_proba(X_small)[0, 1]) ## we get 67% (above the 50% threshold ==> the customer will churn)
+
+print("the real value of this customer to churn is :" , y_test[-1])   ## we get 1 ==> the customer will churn

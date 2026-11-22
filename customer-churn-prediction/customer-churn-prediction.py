@@ -7,6 +7,7 @@ from IPython.display import display
 from sklearn.metrics import mutual_info_score
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
 
 
@@ -114,3 +115,21 @@ X_small = dv.transform([customer])
 print("the prediction of this customer to churns is : " , model.predict_proba(X_small)[0, 1]) ## we get 67% (above the 50% threshold ==> the customer will churn)
 
 print("the real value of this customer to churn is :" , y_test[-1])   ## we get 1 ==> the customer will churn
+
+
+## checking the accuracy of the model
+accuracy_score(y_valid, y_pred >= 0.5)
+
+## checking for different thresholds  (best one is 0.5 with 80% right prediction)
+thresholds = np.linspace(0, 1, 21)
+
+scores = []
+
+for t in thresholds:
+    score = accuracy_score(y_valid, y_pred >= t)
+    print('%.2f %.3f' % (t, score))
+    scores.append(score)
+
+
+## comparing it with a dummy model (never seen the data before)
+print(1-y_valid.mean())  ## we get 73%

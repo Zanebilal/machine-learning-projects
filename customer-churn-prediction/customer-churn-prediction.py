@@ -133,3 +133,26 @@ for t in thresholds:
 
 ## comparing it with a dummy model (never seen the data before)
 print(1-y_valid.mean())  ## we get 73%
+
+## computing the count of each case in the confusion table
+
+actual_positive = (y_valid == 1)
+actual_negative = (y_valid == 0)
+
+t = 0.5
+predict_positive = (y_pred >= t)
+predict_negative = (y_pred < t)
+
+tp = (predict_positive & actual_positive).sum()
+tn = (predict_negative & actual_negative).sum()
+
+fp = (predict_positive & actual_negative).sum()
+fn = (predict_negative & actual_positive).sum()
+
+## creating the confusion table 
+confusion_matrix = np.array([
+    [tn, fp],
+    [fn, tp]
+])
+
+print((confusion_matrix / confusion_matrix.sum()).round(2))

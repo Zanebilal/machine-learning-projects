@@ -8,6 +8,9 @@ from sklearn.metrics import mutual_info_score
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import KFold
+from tqdm.auto import tqdm
 
 
 
@@ -156,3 +159,60 @@ confusion_matrix = np.array([
 ])
 
 print((confusion_matrix / confusion_matrix.sum()).round(2))
+
+## computes the ROC curve and the area for our model 
+print(roc_auc_score(y_valid, y_pred))
+
+
+def train(df_train, y_train, C=1.0):
+    dicts = df_train[categorical_columns + numerical_columns].to_dict(orient='records')
+
+    dv = DictVectorizer(sparse=False)
+    X_train = dv.fit_transform(dicts)
+
+    model = LogisticRegression(C=C, max_iter=1000)
+    model.fit(X_train, y_train)
+    
+    return dv, model
+
+
+def predict(df, dv, model):
+    dicts = df[categorical_columns + numerical_columns].to_dict(orient='records')
+
+    X = dv.transform(dicts)
+    y_pred = model.predict_proba(X)[:, 1]
+
+    return y_pred
+
+
+## cross validation using k-fold and selecting the best value for param c 
+
+n_splits = 5
+
+for C in tqdm([0.001, 0.01, 0.1, 0.5, 1, 5, 10]):
+    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=1)
+
+    scores = []
+
+    for train_idx, val_idx in kfold.split(df_full_train):
+        df_train = df_full_train.iloc[train_idx]
+        df_val = df_full_train.iloc[val_idx]
+
+        y_train = df_train.churn.values
+        y_val = df_val.churn.values
+
+        dv, model = train(df_train, y_train, C=C)
+        y_pred = predict(df_val, dv, model)
+
+        auc = roc_auc_score(y_val, y_pred)
+        scores.append(auc)
+
+    print('C=%s %.3f +- %.3f' % (C, np.mean(scores), np.std(scores)))
+
+
+## training the model with the full data
+dv, model = train(df_full_train, df_full_train.churn.values, C=1.0)
+y_pred = predict(df_test, dv, model)
+
+auc = roc_auc_score(y_test, y_pred)
+print("the new auc after evaluating the model is : ", auc)

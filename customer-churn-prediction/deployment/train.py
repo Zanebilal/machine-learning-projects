@@ -32,7 +32,17 @@ def load_data():
     df.totalcharges = pd.to_numeric(df.totalcharges, errors='coerce')
     df.totalcharges = df.totalcharges.fillna(0)
 
-    df.churn = (df.churn == 'yes').astype(int)
+    print("Churn values before conversion:")
+    print(df.churn.value_counts(dropna=False))
+
+    df.churn = df.churn.map({
+    'Yes': 1,
+    'No': 0
+    })
+
+    if df.churn.isna().any():
+        raise ValueError("Unexpected values found in churn column")
+    
     return df
 
 
@@ -62,11 +72,16 @@ def train_model(df):
 
 
     y_train = df.churn
+
+    print(y_train.value_counts())
+    print("Unique classes:", y_train.unique())
+    print("Number of classes:", y_train.nunique())
+
     train_dict = df[categorical + numerical].to_dict(orient='records')
 
     pipeline = make_pipeline(
-        DictVectorizer(),
-        LogisticRegression(solver='liblinear')
+    DictVectorizer(sparse=False),
+    LogisticRegression(solver='liblinear')
     )
 
     pipeline.fit(train_dict, y_train)

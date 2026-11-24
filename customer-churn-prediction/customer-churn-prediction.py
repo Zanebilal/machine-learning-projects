@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+import pickle
 from sklearn.model_selection import train_test_split
 from IPython.display import display
 from sklearn.metrics import mutual_info_score
@@ -12,6 +13,12 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold
 from tqdm.auto import tqdm
 
+
+# parameters
+
+C = 1.0
+n_splits = 5
+output_file = f'model_C={C}.bin'
 
 
 df = pd.read_csv('Telco-Customer-Churn.csv')
@@ -216,3 +223,12 @@ y_pred = predict(df_test, dv, model)
 
 auc = roc_auc_score(y_test, y_pred)
 print("the new auc after evaluating the model is : ", auc)
+
+
+## saving the model 
+with open(output_file, 'wb') as f_out:
+    pickle.dump((dv, model), f_out)
+
+print(f'the model is saved to {output_file}')
+
+

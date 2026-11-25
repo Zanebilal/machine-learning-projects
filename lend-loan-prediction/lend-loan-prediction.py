@@ -6,6 +6,12 @@ from matplotlib import pyplot as plt
 
 from sklearn.model_selection import train_test_split
 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.metrics import roc_auc_score
+from sklearn.tree import export_text
+
+
 
 # data preparation 
 
@@ -90,3 +96,28 @@ y_test = (df_test.status == 'default').astype('int').values
 del df_train['status']
 del df_valid['status']
 del df_test['status']
+
+# training the decision tree
+
+## filling the missing values with 0 
+train_dicts = df_train.fillna(0).to_dict(orient='records')
+
+dv = DictVectorizer(sparse=False)
+
+## getting the feature matrix for the training data 
+X_train = dv.fit_transform(train_dicts)
+
+## training the tree
+dt= DecisionTreeClassifier()
+dt.fit(X_train, y_train)
+
+## testing the model in the validation data
+valid_dicts = df_valid.fillna(0).to_dict(orient='records')
+
+X_valid = dv.transform(valid_dicts)
+
+### the prediction of the model in the validation data
+y_predict = dt.predict_proba(X_valid)[:,1] 
+
+### getting the auc score to see the precision of the model
+print(roc_auc_score(y_valid, y_predict))

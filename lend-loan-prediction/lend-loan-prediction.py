@@ -10,6 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import roc_auc_score
 from sklearn.tree import export_text
+from sklearn.ensemble import RandomForestClassifier
 
 
 
@@ -168,10 +169,86 @@ df_scores_pivot.round(3)
 
 # displaying the result in a heatmap
 sns.heatmap(df_scores_pivot, annot=True, fmt=".3f")
-plt.show()
+# plt.show()
 
 ## training the tree with the new params value
 dt = DecisionTreeClassifier(max_depth=6, min_samples_leaf=15)
 dt.fit(X_train, y_train)
 
-print(export_text(dt, feature_names=list(dv.get_feature_names_out())))
+
+## implementing random forest to get the best value of 'n_estimators' (number of trees) 
+scores = []
+
+for n in range(10, 201, 10):
+    rf = RandomForestClassifier(n_estimators=n, random_state=1)
+    rf.fit(X_train, y_train)
+
+    y_pred = rf.predict_proba(X_valid)[:, 1]
+    auc = roc_auc_score(y_valid, y_pred)
+
+    scores.append((n, auc))
+
+## organizing the data in a dataframe and plot them
+df_scores = pd.DataFrame(scores, columns=['n_estimators', 'auc'])
+plt.plot(df_scores.n_estimators, df_scores.auc)
+# plt.show()
+
+## getting the best value for the 'max_depth' -- best one is max_depth=10
+scores = []
+
+for d in [5, 10, 15]:
+    for n in range(10, 201, 10):
+        rf = RandomForestClassifier(n_estimators=n,
+                                    max_depth=d,
+                                    random_state=1)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict_proba(X_valid)[:, 1]
+        auc = roc_auc_score(y_valid, y_pred)
+
+        scores.append((d, n, auc))
+
+
+columns = ['max_depth', 'n_estimators', 'auc']
+df_scores = pd.DataFrame(scores, columns=columns)
+
+for d in [5, 10, 15]:
+    df_subset = df_scores[df_scores.max_depth == d]
+
+    plt.plot(df_subset.n_estimators, df_subset.auc,
+             label='max_depth=%d' % d)
+
+plt.legend()
+# plt.show()
+
+## getting the best value for the 'min_samples_leaf' -- best one is min_samples_leaf=3
+scores = []
+
+for s in [1, 3, 5, 10, 50]:
+    for n in range(10, 201, 10):
+        rf = RandomForestClassifier(n_estimators=n,
+                                    max_depth=10,
+                                    min_samples_leaf=s,
+                                    random_state=1)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict_proba(X_valid)[:, 1]
+        auc = roc_auc_score(y_valid, y_pred)
+
+        scores.append((s, n, auc))
+
+columns = ['min_samples_leaf', 'n_estimators', 'auc']
+df_scores = pd.DataFrame(scores, columns=columns)
+
+colors = ['black', 'blue', 'orange', 'red', 'grey']
+values = [1, 3, 5, 10, 50]
+
+for s, col in zip(values, colors):
+    df_subset = df_scores[df_scores.min_samples_leaf == s]
+
+    plt.plot(df_subset.n_estimators, df_subset.auc,
+             color=col,
+             label='min_samples_leaf=%d' % s)
+
+plt.legend()
+# plt.show()

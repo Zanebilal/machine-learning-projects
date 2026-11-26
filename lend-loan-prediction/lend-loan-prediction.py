@@ -108,7 +108,7 @@ dv = DictVectorizer(sparse=False)
 X_train = dv.fit_transform(train_dicts)
 
 ## training the tree
-dt= DecisionTreeClassifier()
+dt= DecisionTreeClassifier(max_depth=2)
 dt.fit(X_train, y_train)
 
 ## testing the model in the validation data
@@ -120,4 +120,58 @@ X_valid = dv.transform(valid_dicts)
 y_predict = dt.predict_proba(X_valid)[:,1] 
 
 ### getting the auc score to see the precision of the model
-print(roc_auc_score(y_valid, y_predict))
+auc = roc_auc_score(y_valid, y_predict)
+print('val:', auc)
+
+
+### getting the auc score for the training data
+y_pred = dt.predict_proba(X_train)[:, 1]
+auc = roc_auc_score(y_train, y_pred)
+print('train:', auc)
+
+## tuning the decision tree model 
+# getting the best value for 'max_depth' param
+
+depths = [1, 2, 3, 4, 5, 6, 10, 15, 20, None]
+
+for depth in depths: 
+    dt = DecisionTreeClassifier(max_depth=depth)
+    dt.fit(X_train, y_train)
+    
+    y_pred = dt.predict_proba(X_valid)[:, 1]
+    auc = roc_auc_score(y_valid, y_pred)
+    
+    print('%4s -> %.3f' % (depth, auc))  ## best ones are 4 , 5, 6
+
+
+# getting the best value for  'min_samples_leaf' param
+
+scores = []
+
+for depth in [4, 5, 6]:
+    for s in [1, 5, 10, 15, 20, 500, 100, 200]:
+        dt = DecisionTreeClassifier(max_depth=depth, min_samples_leaf=s)
+        dt.fit(X_train, y_train)
+
+        y_pred = dt.predict_proba(X_valid)[:, 1]
+        auc = roc_auc_score(y_valid, y_pred)
+        
+        scores.append((depth, s, auc))
+
+
+# organizing the output into a dataframe
+columns = ['max_depth', 'min_samples_leaf', 'auc']
+df_scores = pd.DataFrame(scores, columns=columns)
+
+df_scores_pivot = df_scores.pivot(index='min_samples_leaf', columns=['max_depth'], values=['auc'])
+df_scores_pivot.round(3)
+
+# displaying the result in a heatmap
+sns.heatmap(df_scores_pivot, annot=True, fmt=".3f")
+plt.show()
+
+## training the tree with the new params value
+dt = DecisionTreeClassifier(max_depth=6, min_samples_leaf=15)
+dt.fit(X_train, y_train)
+
+print(export_text(dt, feature_names=list(dv.get_feature_names_out())))

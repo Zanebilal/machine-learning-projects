@@ -154,3 +154,38 @@ model = xgb.train(xgb_params, dtrain, num_boost_round=10)
 ## getting the predictions
 y_pred = model.predict(dval)
 print(roc_auc_score(y_valid, y_pred))
+
+# parameter tunning
+## finding the best value for 'eta' param  -- best value is eta=0.1
+watchlist = [(dtrain, 'train'), (dval, 'val')]
+
+scores = {}     
+
+xgb_params = {
+    'eta': 0.01,
+    'max_depth': 6,
+    'min_child_weight': 1,
+
+    'objective': 'binary:logistic',
+    'eval_metric': 'auc',
+
+    'nthread': 8,
+    'seed': 1,
+    'verbosity': 1,
+}
+
+model = xgb.train(xgb_params, dtrain, num_boost_round=200,
+                  verbose_eval=5,
+                  evals=watchlist)
+
+key = 'eta=%s' % (xgb_params['eta'])
+scores[key] = parse_xgb_output(output)
+
+for key, df_score in scores.items():
+    plt.plot(df_score.num_iter, df_score.val_auc, label=key)
+
+plt.ylim(0.8, 0.84)
+plt.legend()
+# plt.show()
+
+

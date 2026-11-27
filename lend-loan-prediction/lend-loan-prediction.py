@@ -155,13 +155,28 @@ model = xgb.train(xgb_params, dtrain, num_boost_round=10)
 y_pred = model.predict(dval)
 print(roc_auc_score(y_valid, y_pred))
 
-# parameter tunning
+# choosing the right model between the three models using the tunned params
 
-## finding the best value for 'min_child_weight' param  -- best value is min_child_weight= 1
+## decision tree model
+dt = DecisionTreeClassifier(max_depth=6, min_samples_leaf=15)
+dt.fit(X_train, y_train)
 
-watchlist = [(dtrain, 'train'), (dval, 'val')]
+y_pred = dt.predict_proba(X_valid)[:, 1]
+print("thw auc value for decision tree model :" , roc_auc_score(y_valid, y_pred))
 
-scores = {}     
+## random forest model
+
+rf = RandomForestClassifier(n_estimators=200,
+                            max_depth=10,
+                            min_samples_leaf=3,
+                            random_state=1)
+rf.fit(X_train, y_train)
+
+y_pred = rf.predict_proba(X_valid)[:, 1]
+print("thw auc value for random forest model :" ,roc_auc_score(y_valid, y_pred))
+
+
+## XGBoost model
 
 xgb_params = {
     'eta': 0.1,
@@ -176,19 +191,10 @@ xgb_params = {
     'verbosity': 1,
 }
 
-model = xgb.train(xgb_params, dtrain, num_boost_round=200,
-                  verbose_eval=5,
-                  evals=watchlist)
+model = xgb.train(xgb_params, dtrain, num_boost_round=175)
 
-key = 'min_child_weight=%s' % (xgb_params['min_child_weight'])
-scores[key] = parse_xgb_output(output)
-
-for key, df_score in scores.items():
-    plt.plot(df_score.num_iter, df_score.val_auc, label=key)
-
-plt.ylim(0.82, 0.84)
-plt.legend()
-# plt.show()
+y_pred = model.predict(dval)
+print("thw auc value for random forest model :" ,roc_auc_score(y_valid, y_pred))
 
 
 

@@ -156,13 +156,14 @@ y_pred = model.predict(dval)
 print(roc_auc_score(y_valid, y_pred))
 
 # parameter tunning
-## finding the best value for 'eta' param  -- best value is eta=0.1
+
+## finding the best value for 'max_depth' param  -- best value is max_depth=3
 watchlist = [(dtrain, 'train'), (dval, 'val')]
 
 scores = {}     
 
 xgb_params = {
-    'eta': 0.01,
+    'eta': 0.1,
     'max_depth': 6,
     'min_child_weight': 1,
 
@@ -178,14 +179,15 @@ model = xgb.train(xgb_params, dtrain, num_boost_round=200,
                   verbose_eval=5,
                   evals=watchlist)
 
-key = 'eta=%s' % (xgb_params['eta'])
+key = 'max_depth=%s' % (xgb_params['max_depth'])
 scores[key] = parse_xgb_output(output)
-
+s
 for key, df_score in scores.items():
     plt.plot(df_score.num_iter, df_score.val_auc, label=key)
 
 plt.ylim(0.8, 0.84)
 plt.legend()
 # plt.show()
+
 
 

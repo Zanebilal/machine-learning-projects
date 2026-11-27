@@ -155,28 +155,24 @@ model = xgb.train(xgb_params, dtrain, num_boost_round=10)
 y_pred = model.predict(dval)
 print(roc_auc_score(y_valid, y_pred))
 
-# choosing the right model between the three models using the tunned params
 
-## decision tree model
-dt = DecisionTreeClassifier(max_depth=6, min_samples_leaf=15)
-dt.fit(X_train, y_train)
+## training the XGBoost model 
+df_full_train = df_full_train.reset_index(drop=True)
 
-y_pred = dt.predict_proba(X_valid)[:, 1]
-print("thw auc value for decision tree model :" , roc_auc_score(y_valid, y_pred))
+y_full_train = (df_full_train.status =='default') .astype(int).values
+del df_full_train['status']
 
-## random forest model
+dicts_full_train = df_full_train.to_dict(orient='records')
 
-rf = RandomForestClassifier(n_estimators=200,
-                            max_depth=10,
-                            min_samples_leaf=3,
-                            random_state=1)
-rf.fit(X_train, y_train)
+dv = DictVectorizer(sparse=False)
+X_full_train = dv.fit_transform(dicts_full_train)
 
-y_pred = rf.predict_proba(X_valid)[:, 1]
-print("thw auc value for random forest model :" ,roc_auc_score(y_valid, y_pred))
+dicts_test = df_test.to_dict(orient='records')
+X_test = dv.transform(dicts_test)
 
+d_full_train = xgb.DMatrix(X_full_train, label=y_full_train, feature_names = dv.get_feature_names_out())
 
-## XGBoost model
+dtest = xgb.DMatrix(X_test, feature_names=dv.get_feature_names_out())
 
 xgb_params = {
     'eta': 0.1,
@@ -191,10 +187,7 @@ xgb_params = {
     'verbosity': 1,
 }
 
-model = xgb.train(xgb_params, dtrain, num_boost_round=175)
+model = xgb.train(xgb_params, d_full_train, num_boost_round=175)
 
-y_pred = model.predict(dval)
-print("thw auc value for random forest model :" ,roc_auc_score(y_valid, y_pred))
-
-
-
+y_pred = model.predict(dtest)
+print(roc_auc_score(y_test, y_pred))

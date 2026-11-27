@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 
 import seaborn as sns
+
+import xgboost as xgb
+
 from matplotlib import pyplot as plt
 
 from sklearn.model_selection import train_test_split
@@ -122,133 +125,32 @@ y_predict = dt.predict_proba(X_valid)[:,1]
 
 ### getting the auc score to see the precision of the model
 auc = roc_auc_score(y_valid, y_predict)
-print('val:', auc)
-
 
 ### getting the auc score for the training data
 y_pred = dt.predict_proba(X_train)[:, 1]
 auc = roc_auc_score(y_train, y_pred)
-print('train:', auc)
 
-## tuning the decision tree model 
-# getting the best value for 'max_depth' param
+# implementing the boosting forest 
+## wrapping the data into DMatrix 
+features = list(dv.get_feature_names_out())
+dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=features)
+dval = xgb.DMatrix(X_valid, label=y_valid, feature_names=features)
 
-depths = [1, 2, 3, 4, 5, 6, 10, 15, 20, None]
+## training the model 
+xgb_params = {
+    'eta': 0.3,
+    'max_depth': 6,
+    'min_child_weight': 1,
 
-for depth in depths: 
-    dt = DecisionTreeClassifier(max_depth=depth)
-    dt.fit(X_train, y_train)
-    
-    y_pred = dt.predict_proba(X_valid)[:, 1]
-    auc = roc_auc_score(y_valid, y_pred)
-    
-    print('%4s -> %.3f' % (depth, auc))  ## best ones are 4 , 5, 6
+    'objective': 'binary:logistic',
+    'nthread': 8,
 
+    'seed': 1,
+    'verbosity': 1,
+}
 
-# getting the best value for  'min_samples_leaf' param
+model = xgb.train(xgb_params, dtrain, num_boost_round=10)
 
-scores = []
-
-for depth in [4, 5, 6]:
-    for s in [1, 5, 10, 15, 20, 500, 100, 200]:
-        dt = DecisionTreeClassifier(max_depth=depth, min_samples_leaf=s)
-        dt.fit(X_train, y_train)
-
-        y_pred = dt.predict_proba(X_valid)[:, 1]
-        auc = roc_auc_score(y_valid, y_pred)
-        
-        scores.append((depth, s, auc))
-
-
-# organizing the output into a dataframe
-columns = ['max_depth', 'min_samples_leaf', 'auc']
-df_scores = pd.DataFrame(scores, columns=columns)
-
-df_scores_pivot = df_scores.pivot(index='min_samples_leaf', columns=['max_depth'], values=['auc'])
-df_scores_pivot.round(3)
-
-# displaying the result in a heatmap
-sns.heatmap(df_scores_pivot, annot=True, fmt=".3f")
-# plt.show()
-
-## training the tree with the new params value
-dt = DecisionTreeClassifier(max_depth=6, min_samples_leaf=15)
-dt.fit(X_train, y_train)
-
-
-## implementing random forest to get the best value of 'n_estimators' (number of trees) 
-scores = []
-
-for n in range(10, 201, 10):
-    rf = RandomForestClassifier(n_estimators=n, random_state=1)
-    rf.fit(X_train, y_train)
-
-    y_pred = rf.predict_proba(X_valid)[:, 1]
-    auc = roc_auc_score(y_valid, y_pred)
-
-    scores.append((n, auc))
-
-## organizing the data in a dataframe and plot them
-df_scores = pd.DataFrame(scores, columns=['n_estimators', 'auc'])
-plt.plot(df_scores.n_estimators, df_scores.auc)
-# plt.show()
-
-## getting the best value for the 'max_depth' -- best one is max_depth=10
-scores = []
-
-for d in [5, 10, 15]:
-    for n in range(10, 201, 10):
-        rf = RandomForestClassifier(n_estimators=n,
-                                    max_depth=d,
-                                    random_state=1)
-        rf.fit(X_train, y_train)
-
-        y_pred = rf.predict_proba(X_valid)[:, 1]
-        auc = roc_auc_score(y_valid, y_pred)
-
-        scores.append((d, n, auc))
-
-
-columns = ['max_depth', 'n_estimators', 'auc']
-df_scores = pd.DataFrame(scores, columns=columns)
-
-for d in [5, 10, 15]:
-    df_subset = df_scores[df_scores.max_depth == d]
-
-    plt.plot(df_subset.n_estimators, df_subset.auc,
-             label='max_depth=%d' % d)
-
-plt.legend()
-# plt.show()
-
-## getting the best value for the 'min_samples_leaf' -- best one is min_samples_leaf=3
-scores = []
-
-for s in [1, 3, 5, 10, 50]:
-    for n in range(10, 201, 10):
-        rf = RandomForestClassifier(n_estimators=n,
-                                    max_depth=10,
-                                    min_samples_leaf=s,
-                                    random_state=1)
-        rf.fit(X_train, y_train)
-
-        y_pred = rf.predict_proba(X_valid)[:, 1]
-        auc = roc_auc_score(y_valid, y_pred)
-
-        scores.append((s, n, auc))
-
-columns = ['min_samples_leaf', 'n_estimators', 'auc']
-df_scores = pd.DataFrame(scores, columns=columns)
-
-colors = ['black', 'blue', 'orange', 'red', 'grey']
-values = [1, 3, 5, 10, 50]
-
-for s, col in zip(values, colors):
-    df_subset = df_scores[df_scores.min_samples_leaf == s]
-
-    plt.plot(df_subset.n_estimators, df_subset.auc,
-             color=col,
-             label='min_samples_leaf=%d' % s)
-
-plt.legend()
-# plt.show()
+## getting the predictions
+y_pred = model.predict(dval)
+print(roc_auc_score(y_valid, y_pred))
